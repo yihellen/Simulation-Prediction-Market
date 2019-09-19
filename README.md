@@ -4,6 +4,7 @@ Bayesian Prediction Market Simulation. Works for data subject to Bernoulli distr
 Try ```python simulation_prediction_market.py "./Data/Test_Gaussian.csv" Test_data -d Gaussian``` for a quick start.
 Use ```--help``` as a guide.
 Play around with the simulation. In time, you'll see it's just an average.
+(The Jupyter Notebook version is very out-dated, please look at the .py file directly)
 
 related repo:
 https://github.com/shineyruan/Reading-Group-Kutty-Meetings
