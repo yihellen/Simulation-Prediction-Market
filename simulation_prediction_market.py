@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 
-Simulation Prediction Market Main Executable
+LMSR based prediction market for events that follow Bernoulli distribution
+Main Executable
 
 """
 
 import argparse
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import bernoulli
 from Agents.bayesian_agent import BayesianAgent
-from Market_Maker.market_maker import MarketMaker
 
 
 def parse_command_line():
@@ -19,82 +21,87 @@ def parse_command_line():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "dataset", type=str, help="specify path to the dataset"
+        "true_probability", type=float, help="specify the true probability of the\
+         occurrence of an outcome"
     )
     parser.add_argument(
-        "column_name", type=str, help="specify column name in the dataframe to\
-        make a prediction on"
+        "num_iteration", type=int, help="number of repeated experiments"
     )
     parser.add_argument(
-        "-d", "--distribution", type=str, help="specify either Bernoulli\
-        or Gaussian distribution", choices=["Gaussian", "Bernoulli"]
+        "num_agents", type=int, help="specify the number of agents in the market"
+    )
+    parser.add_argument(
+        "epsilon", type=float, help="the maximum difference in prices upon\
+         convergence"
+    )
+    parser.add_argument(
+        "budget", type=bool, help="if there are budget constraints"
     )
     args = parser.parse_args()
 
     return args
 
 
-def import_data(path, column_name):
-    """
-    import real data from csv file
-    :param: path: str, data path
-    :return: processed_list: list, list of actual data
-    """
-    res = pd.read_csv(path)
-    processed_list = res[column_name].tolist()
-    return processed_list
-
 def main():
+
     args = parse_command_line()
-    data_path = args.dataset
+    true_prob = args.true_probability
+    epsilon = args.epsilon
+    num_agents = args.num_agents
+    num_iteration = args.num_iteration
+    true_outcomes = bernoulli.rvs(size=num_iteration,p=true_prob)
+    # do the same for the scenario where the agents are not constrained by budgets
+    # and the scenario where the agents are constrained by budgets
+    # initialize the beliefs of each agents (Uniform distribution between 0 & 1)
+    agent_initial_beliefs = np.random.uniform(size=(num_agents,))
+    agent_profit = np.zeros((num_agents, ))
 
-    # the number of datapoints agent observes at a time
-    # same across all agents
-    num_observed_sample = 4
+    # initialize the budget of each agent （see the result with no budget
+    # constraint to decide what values the budgets should take)
+    for trial in range(num_iteration):
+        true_outcome = true_outcomes[trial]
+        agents = []
+        for i in range(num_agents):
+            agents.append(BayesianAgent(agent_initial_beliefs[i]))
+        market_belief = 0.5 # initial belief of the market maker
+        prev_market_belief = 0.5
+        iter = 0
+        while (iter <  num_agents or abs(market_belief - prev_market_belief) >= epsilon):
+            agent_idx = iter % num_agents
+            # agent update belief based on market prices
+            agent = agents[agent_idx]
+            agent.agent_belief_update(iter, market_belief)
+            agent.agent_profit_update(market_belief)
+            prev_market_belief = market_belief
+            market_belief = agent.belief
+            iter += 1
+        for i in range(num_agents):
+            agent_profit[i] += agents[i].profit[true_outcome]
+        agent_current_beliefs = []
+        for i in range(num_agents):
+            agent_current_beliefs.append(agents[i].belief)
+        agent_temp_profit = []
+        for i in range(num_agents):
+            agent_temp_profit.append(agents[i].profit[true_outcome])
+        plt.scatter(agent_current_beliefs, agent_temp_profit)
+        plt.xlabel('Agent current beliefs on outcome 0 (the first outcome)')
+        plt.ylabel('Agent earned profit')
+        plt.title('Agents\' profits on the {}-th trial when outcome is {}'.format(trial, true_outcome))
+        plt.savefig('./sim_res/profit_curr_belief_trial_{}.png'.format(trial))
+        plt.close()
 
-    # import data
-    data = import_data(data_path, args.column_name)
-    real_outcome = sum(data) / len(data)
+    plt.scatter(agent_initial_beliefs, agent_profit)
+    plt.xlabel('Agent initial beliefs on outcome 0 (the first outcome)')
+    plt.ylabel('Agent earned profit')
+    plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(1-true_prob, num_iteration))
+    plt.savefig('./sim_res/profit_init_belief_prob_{}_iter_{}.png'.format(1-true_prob, num_iteration))
+    plt.close()
 
-    # initialize market maker
-    mk = MarketMaker(distribution=args.distribution)
 
-    ############### Agents enter with Poisson distribution ###############
-    # enter_times = np.random.poisson(7.5, max_iteration)
-    # lambda*max_iteration ~= size of dataset
-    # enter_times = list(np.cumsum(enter_times) + num_observed_sample)
-    ######################################################################
 
-    # The agent are now all the same
-    # They observe different data points though
-    try:
-        agent = BayesianAgent(distribution=args.distribution)
-    except TypeError:
-        return
+    # plot the graph of the agents' profit against the agents' initial belief
+    # plot the graph of the agents' profit against the agents' current belief
 
-    enter_time = 0
-    # The number of agents in this market is not pre-ordained
-    # The trade will stop once the market reached equilibrium
-    while True:
-        last_market_price = mk.current_market_price
-        observed_data = data[enter_time: enter_time + num_observed_sample]
-        enter_time += num_observed_sample
-        # Out of data to observe
-        if enter_time > len(data):
-            break
-        shares_to_buy, _ = agent.calculate_shares_to_buy(observed_data,\
-         mk.num_trade, mk.current_market_price)
-        mk.update_param(shares_to_buy)
-        # TODO: equilibrium is necessary in real life market, not a must here
-        if mk.market_equilibrium(last_market_price):
-            break
-
-    # Payoff logic
-    # For Bernoulli distribution the payoff is quite straight forward
-    # payoff = [agent.security_amount * real_outcome for agent in agents]
-
-    print("Current market price is {}, while the real outcome is {}".\
-    format(mk.current_market_price, real_outcome))
 
 
 if __name__ == '__main__':
