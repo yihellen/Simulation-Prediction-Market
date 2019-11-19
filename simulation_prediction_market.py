@@ -9,6 +9,7 @@ Main Executable
 import argparse
 import pandas as pd
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 from scipy.stats import bernoulli
 from Agents.bayesian_agent import BayesianAgent
@@ -30,10 +31,10 @@ def parse_command_line():
     parser.add_argument(
         "num_agents", type=int, help="specify the number of agents in the market"
     )
-    parser.add_argument(
-        "epsilon", type=float, help="the maximum difference in prices upon\
-         convergence"
-    )
+    # parser.add_argument(
+    #     "epsilon", type=float, help="the maximum difference in prices upon\
+    #      convergence"
+    # )
     parser.add_argument(
         "budget", type=bool, help="if there are budget constraints"
     )
@@ -46,7 +47,7 @@ def main():
 
     args = parse_command_line()
     true_prob = args.true_probability
-    epsilon = args.epsilon
+    # epsilon = args.epsilon
     num_agents = args.num_agents
     num_iteration = args.num_iteration
     true_outcomes = bernoulli.rvs(size=num_iteration,p=true_prob)
@@ -55,7 +56,7 @@ def main():
     # initialize the beliefs of each agents (Uniform distribution between 0 & 1)
     agent_initial_beliefs = np.random.uniform(size=(num_agents,))
     agent_profit = np.zeros((num_agents, ))
-
+    agent_idx_list = list(np.arange(num_agents))
     # initialize the budget of each agent （see the result with no budget
     # constraint to decide what values the budgets should take)
     for trial in range(num_iteration):
@@ -66,11 +67,12 @@ def main():
         market_belief = 0.5 # initial belief of the market maker
         prev_market_belief = 0.5
         iter = 0
-        while (iter <  num_agents or abs(market_belief - prev_market_belief) >= epsilon):
-            agent_idx = iter % num_agents
+        random.shuffle(agent_idx_list)
+        while (iter <  num_agents):
+            agent_idx = agent_idx_list[iter]
             # agent update belief based on market prices
             agent = agents[agent_idx]
-            agent.agent_belief_update(iter, market_belief)
+            # agent.agent_belief_update(iter, market_belief)
             agent.agent_profit_update(market_belief)
             prev_market_belief = market_belief
             market_belief = agent.belief
@@ -87,14 +89,14 @@ def main():
         plt.xlabel('Agent current beliefs on outcome 0 (the first outcome)')
         plt.ylabel('Agent earned profit')
         plt.title('Agents\' profits on the {}-th trial when outcome is {}'.format(trial, true_outcome))
-        plt.savefig('./sim_res/profit_curr_belief_trial_{}.png'.format(trial))
+        plt.savefig('./sim_res_random_shuffle_agents_in_each_iter/profit_curr_belief_trial_{}.png'.format(trial))
         plt.close()
 
     plt.scatter(agent_initial_beliefs, agent_profit)
     plt.xlabel('Agent initial beliefs on outcome 0 (the first outcome)')
     plt.ylabel('Agent earned profit')
     plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(1-true_prob, num_iteration))
-    plt.savefig('./sim_res/profit_init_belief_prob_{}_iter_{}.png'.format(1-true_prob, num_iteration))
+    plt.savefig('./sim_res_random_shuffle_agents_in_each_iter/profit_init_belief_prob_{}_iter_{}.png'.format(1-true_prob, num_iteration))
     plt.close()
 
 
