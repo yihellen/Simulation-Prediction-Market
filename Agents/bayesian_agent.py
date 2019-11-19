@@ -7,27 +7,27 @@ class BayesianAgent:
     bayesian agent
     """
 
-    def __init__(self, initial):
+    def __init__(self, initial, budget=0):
         """
         distribution: the type of distribution
         """
         self.belief = initial
         self.profit = [0, 0]
+        self.budget = budget
         # the first entry of self.profit is the profit earned when the first
         # outcome takes place, the second entry of self.profit is the profit
         # earned when the second outcome takes place
 
 
-    def agent_belief_update(self, posted_num_trade, current_market_price):
+    def agent_belief_update(self, market_belief):
         """
-        The agent takes a look at the current market price, and adjusts his or
-        her belief
-        miu = (n*chi+miu)/(n+1)
-        :return: posterior: the updated posterior
+        The agent will update his or her belief based on the current budget and market belief
         """
-        prior = self.belief
-        self.belief = (posted_num_trade * current_market_price + prior)/\
-        (posted_num_trade + 1)
+
+        if (self.belief > 1 - 1/(np.exp(self.budget)) + market_belief/(np.exp(self.budget))):
+            self.belief = 1 - 1/(np.exp(self.budget)) + market_belief/(np.exp(self.budget))
+        elif (self.belief < market_belief / np.exp(self.budget)):
+            self.belief = market_belief / np.exp(self.budget)
 
 
     def agent_profit_update(self, market_belief):

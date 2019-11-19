@@ -37,6 +37,9 @@ def parse_command_line():
     # )
     parser.add_argument('--budget', dest='budget', action='store_true')
     parser.add_argument('--no-budget', dest='budget', action='store_false')
+    parser.add_argument(
+        "budget", type=float, help="specify range of budget"
+    )
     args = parser.parse_args()
 
     return args
@@ -54,6 +57,8 @@ def main():
     # and the scenario where the agents are constrained by budgets
     # initialize the beliefs of each agents (Uniform distribution between 0 & 1)
     agent_initial_beliefs = np.random.uniform(size=(num_agents,))
+    if (args.budget):
+        agent_initial_budget = np.random.uniform(low=0.0, high=args.budget, size=(num_agents,))
     agent_profit = np.zeros((num_agents, ))
     agent_idx_list = list(np.arange(num_agents))
     # initialize the budget of each agent （see the result with no budget
@@ -64,8 +69,12 @@ def main():
     for trial in range(num_iteration):
         true_outcome = true_outcomes[trial]
         agents = []
-        for i in range(num_agents):
-            agents.append(BayesianAgent(agent_initial_beliefs[i]))
+        if (args.budget):
+            for i in range(num_agents):
+                agents.append(BayesianAgent(agent_initial_beliefs[i], agent_initial_budget[i]))
+        else:
+            for i in range(num_agents):
+                agents.append(BayesianAgent(agent_initial_beliefs[i]))
         market_belief = 0.5 # initial belief of the market maker
         prev_market_belief = 0.5
         iter = 0
@@ -74,7 +83,8 @@ def main():
             agent_idx = agent_idx_list[iter]
             # agent update belief based on market prices
             agent = agents[agent_idx]
-            # agent.agent_belief_update(iter, market_belief)
+            if (args.budget):
+                agent.agent_belief_update(market_belief)
             agent.agent_profit_update(market_belief)
             prev_market_belief = market_belief
             market_belief = agent.belief
@@ -87,6 +97,7 @@ def main():
         agent_temp_profit = []
         for i in range(num_agents):
             agent_temp_profit.append(agents[i].profit[true_outcome])
+        # plot the graph of the agents' profit against the agents' current belief
         plt.scatter(agent_current_beliefs, agent_temp_profit)
         plt.xlabel('Agent current beliefs on outcome 0 (the first outcome)')
         plt.ylabel('Agent earned profit')
@@ -94,17 +105,25 @@ def main():
         plt.savefig('./{}/profit_curr_belief_trial_{}.png'.format(folder, trial))
         plt.close()
 
-    plt.scatter(agent_initial_beliefs, agent_profit)
-    plt.xlabel('Agent initial beliefs on outcome 0 (the first outcome)')
+    # plot the graph of the agents' profit against the agents' initial belief
+    plt.scatter(agent_initial_beliefs, agent_profit / num_iteration)
+    plt.xlabel('Agent initial belief on outcome 0 (the first outcome)')
     plt.ylabel('Agent earned profit')
     plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
     plt.savefig('./{}/profit_init_belief_prob_{}_iter_{}.png'.format(folder, true_prob, num_iteration))
     plt.close()
 
+    # if there is budget, plot agents' budget against the agents' profit
+    if (args.budget):
+        plt.scatter(agent_initial_budget, agent_profit / num_iteration)
+        plt.xlabel('Agent initial budget')
+        plt.ylabel('Agent earned profit')
+        plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
+        plt.savefig('./{}/profit_init_budget_prob_{}_iter_{}.png'.format(folder, true_prob, num_iteration))
+        plt.close()
 
 
-    # plot the graph of the agents' profit against the agents' initial belief
-    # plot the graph of the agents' profit against the agents' current belief
+
 
 
 
