@@ -5,7 +5,7 @@ LMSR based prediction market for events that follow Bernoulli distribution
 Main Executable
 
 """
-
+import os
 import argparse
 import pandas as pd
 import numpy as np
@@ -35,9 +35,8 @@ def parse_command_line():
     #     "epsilon", type=float, help="the maximum difference in prices upon\
     #      convergence"
     # )
-    parser.add_argument(
-        "budget", type=bool, help="if there are budget constraints"
-    )
+    parser.add_argument('--budget', dest='budget', action='store_true')
+    parser.add_argument('--no-budget', dest='budget', action='store_false')
     args = parser.parse_args()
 
     return args
@@ -50,7 +49,7 @@ def main():
     # epsilon = args.epsilon
     num_agents = args.num_agents
     num_iteration = args.num_iteration
-    true_outcomes = bernoulli.rvs(size=num_iteration,p=true_prob)
+    true_outcomes = bernoulli.rvs(size=num_iteration,p=1-true_prob)
     # do the same for the scenario where the agents are not constrained by budgets
     # and the scenario where the agents are constrained by budgets
     # initialize the beliefs of each agents (Uniform distribution between 0 & 1)
@@ -59,6 +58,9 @@ def main():
     agent_idx_list = list(np.arange(num_agents))
     # initialize the budget of each agent （see the result with no budget
     # constraint to decide what values the budgets should take)
+    folder = 'sim_res_budget_{}_iter_{}_prob_{}_agentnum_{}'.format(int(args.budget), num_iteration, true_prob, num_agents)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
     for trial in range(num_iteration):
         true_outcome = true_outcomes[trial]
         agents = []
@@ -89,14 +91,14 @@ def main():
         plt.xlabel('Agent current beliefs on outcome 0 (the first outcome)')
         plt.ylabel('Agent earned profit')
         plt.title('Agents\' profits on the {}-th trial when outcome is {}'.format(trial, true_outcome))
-        plt.savefig('./sim_res_random_shuffle_agents_in_each_iter/profit_curr_belief_trial_{}.png'.format(trial))
+        plt.savefig('./{}/profit_curr_belief_trial_{}.png'.format(folder, trial))
         plt.close()
 
     plt.scatter(agent_initial_beliefs, agent_profit)
     plt.xlabel('Agent initial beliefs on outcome 0 (the first outcome)')
     plt.ylabel('Agent earned profit')
-    plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(1-true_prob, num_iteration))
-    plt.savefig('./sim_res_random_shuffle_agents_in_each_iter/profit_init_belief_prob_{}_iter_{}.png'.format(1-true_prob, num_iteration))
+    plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
+    plt.savefig('./{}/profit_init_belief_prob_{}_iter_{}.png'.format(folder, true_prob, num_iteration))
     plt.close()
 
 
