@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import bernoulli
 from Agents.bayesian_agent import BayesianAgent
 
-
 def parse_command_line():
     """
     argument parser
