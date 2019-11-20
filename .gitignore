@@ -1,3 +1,5 @@
 .idea
 .vscode
-*pycache*
+*pycache
+sim_res*
+*
