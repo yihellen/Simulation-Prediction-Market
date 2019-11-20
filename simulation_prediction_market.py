@@ -127,7 +127,6 @@ def main():
         ax.set_ylabel('agent initial budget')
         ax.set_zlabel('agent average profit across iterations')
         plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
-        import pdb; pdb.set_trace()
         plt.savefig('./{}/profit_prob_{}_iter_{}_3d.png'.format(folder, true_prob, num_iteration))
         plt.close()
 
