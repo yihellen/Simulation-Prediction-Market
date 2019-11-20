@@ -1,5 +1,4 @@
 .idea
 .vscode
 *pycache
-sim_res*
-*
+sim_res_*/
