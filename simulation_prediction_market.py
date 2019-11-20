@@ -10,6 +10,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import random
+from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
 from scipy.stats import bernoulli
 from Agents.bayesian_agent import BayesianAgent
@@ -63,7 +64,7 @@ def main():
     agent_idx_list = list(np.arange(num_agents))
     # initialize the budget of each agent （see the result with no budget
     # constraint to decide what values the budgets should take)
-    folder = 'sim_res_budget_{}_iter_{}_prob_{}_agentnum_{}'.format(int(args.budget), num_iteration, true_prob, num_agents)
+    folder = 'sim_res_budget_{}_iter_{}_prob_{}_agentnum_{}'.format(args.budget, num_iteration, true_prob, num_agents)
     if not os.path.exists(folder):
         os.makedirs(folder)
     for trial in range(num_iteration):
@@ -76,7 +77,6 @@ def main():
             for i in range(num_agents):
                 agents.append(BayesianAgent(agent_initial_beliefs[i]))
         market_belief = 0.5 # initial belief of the market maker
-        prev_market_belief = 0.5
         iter = 0
         random.shuffle(agent_idx_list)
         while (iter <  num_agents):
@@ -86,17 +86,16 @@ def main():
             if (args.budget):
                 agent.agent_belief_update(market_belief)
             agent.agent_profit_update(market_belief)
-            prev_market_belief = market_belief
             market_belief = agent.belief
             iter += 1
-        for i in range(num_agents):
-            agent_profit[i] += agents[i].profit[true_outcome]
+
         agent_current_beliefs = []
-        for i in range(num_agents):
-            agent_current_beliefs.append(agents[i].belief)
         agent_temp_profit = []
         for i in range(num_agents):
+            agent_profit[i] += agents[i].profit[true_outcome]
+            agent_current_beliefs.append(agents[i].belief)
             agent_temp_profit.append(agents[i].profit[true_outcome])
+
         # plot the graph of the agents' profit against the agents' current belief
         plt.scatter(agent_current_beliefs, agent_temp_profit)
         plt.xlabel('Agent current beliefs on outcome 0 (the first outcome)')
@@ -121,6 +120,18 @@ def main():
         plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
         plt.savefig('./{}/profit_init_budget_prob_{}_iter_{}.png'.format(folder, true_prob, num_iteration))
         plt.close()
+
+        fig = plt.figure()
+        ax = plt.axes(projection="3d")
+        ax.scatter3D(agent_initial_beliefs, agent_initial_budget,\
+         agent_profit / num_iteration, c=agent_profit / num_iteration, cmap='hsv');
+        ax.set_xlabel('agent initial beliefs')
+        ax.set_ylabel('agent initial budget')
+        ax.set_zlabel('agent average profit across iterations')
+        plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
+        plt.savefig('./{}/profit_prob_{}_iter_{}_3d.png'.format(folder, true_prob, num_iteration))
+        plt.close()
+
 
 
 
