@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import bernoulli
 from Agents.bayesian_agent import BayesianAgent
 
-
 def parse_command_line():
     """
     argument parser
@@ -62,13 +61,8 @@ def main():
         agent_initial_budget = np.random.uniform(low=0.0, high=args.budget, size=(num_agents,))
     agent_profit = np.zeros((num_agents, ))
     agent_idx_list = list(np.arange(num_agents))
-    # initialize the budget of each agent （see the result with no budget
-    # constraint to decide what values the budgets should take)
-<<<<<<< HEAD
+    # initialize the budget of each agent
     folder = 'budget_{}_i_{}_p_{}_num_{}'.format(args.budget, num_iteration, true_prob, num_agents)
-=======
-    folder = 'sim_res_budget_{}_iter_{}_prob_{}_agentnum_{}'.format(args.budget, num_iteration, true_prob, num_agents)
->>>>>>> 0453cd62f16c7653e734a47cdedcf7fe447c5742
     if not os.path.exists(folder):
         os.makedirs(folder)
     for trial in range(num_iteration):
@@ -133,6 +127,7 @@ def main():
         ax.set_ylabel('agent initial budget')
         ax.set_zlabel('agent average profit across iterations')
         plt.title('Agents\' profits when true probability for outcome 0 is {} (num_iter = {})'.format(true_prob, num_iteration))
+        import pdb; pdb.set_trace()
         plt.savefig('./{}/profit_prob_{}_iter_{}_3d.png'.format(folder, true_prob, num_iteration))
         plt.close()
 
