@@ -63,7 +63,7 @@ def main():
     agent_idx_list = list(np.arange(num_agents))
     # initialize the budget of each agent （see the result with no budget
     # constraint to decide what values the budgets should take)
-    folder = 'sim_res_budget_{}_iter_{}_prob_{}_agentnum_{}'.format(int(args.budget), num_iteration, true_prob, num_agents)
+    folder = 'budget_{}_i_{}_p_{}_num_{}'.format(args.budget, num_iteration, true_prob, num_agents)
     if not os.path.exists(folder):
         os.makedirs(folder)
     for trial in range(num_iteration):
